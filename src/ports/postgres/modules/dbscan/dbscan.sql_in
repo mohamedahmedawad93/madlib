@@ -1,0 +1,45 @@
+m4_include(`SQLCommon.m4')
+
+DROP TYPE IF EXISTS MADLIB_SCHEMA.dbscan_results CASCADE;
+CREATE TYPE MADLIB_SCHEMA.dbscan_results AS
+    (
+    output_schema TEXT,
+    output_table TEXT,
+    total_clusters INT,
+    total_rows INT,
+    total_time INTERVAL
+);
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.run_dbscan
+    (
+    TEXT,
+    INT
+    )
+RETURNS SETOF TEXT[] AS 'MODULE_PATHNAME'
+LANGUAGE C STRICT IMMUTABLE
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `NO SQL', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.dbscan
+    (
+    input_table TEXT,
+    input_cols TEXT
+    output_schema TEXT
+   )
+RETURNS MADLIB_SCHEMA.dbscan_results
+AS $$
+
+    PythonFunctionBodyOnly(`dbscan', `dbscan')
+
+    plpy.execute("SET client_min_messages = error;")
+
+    # schema_madlib comes from PythonFunctionBodyOnly
+    return dbscan.dbscan(
+        schema_madlib,
+    	input_cols,
+        input_table,
+        output_schema,
+        verbose
+        );
+
+$$ LANGUAGE plpythonu
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `MODIFIES SQL DATA', `');

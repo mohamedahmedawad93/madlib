@@ -1,0 +1,76 @@
+import time
+import plpy
+
+def __assert(condition, msg):
+    if not condition :
+        plpy.error(msg);
+
+def dbscan(madlib_schema, input_cols, input_table, output_schema,verbose):
+	begin_dbscan_time = time.time();
+    __assert(
+            input_cols is not None and
+            input_table is not None and
+            "none of the parameters except the output_schema should be null"
+            );
+    columns = input_cols.split(',');
+    query = """ 
+    		SELECT count(*) as cnt
+            FROM pg_attribute
+            where attrelid='{0}'::regclass AND
+            attname IN (""".format(input_table)
+    query2 = """ 
+    		select typname
+			from pg_class c, pg_attribute a, pg_type t
+			where a.attname IN ("""
+
+    for col in columns:
+    	query+= "lower(btrim('%s', ' '))," %col
+    	query2+= "%s," %col
+
+    query = query[:-1]
+    query += ")"
+    
+    query2 = query2[:-1]
+	query2 += ")"
+	query2 += """
+			relname = relation_name and
+			attrelid = c.oid and
+			atttypid = t.oid and
+			attnum > 0 and
+			typname in('_int2','_int4', '_int8','_float4','_float8') 
+			"""
+    try:
+        rv = plpy.execute(query);
+        __assert(rv[0]["cnt"] > 0, "the input columns not in input table");
+
+        rv = plpy.execute(query2)
+        rv2 = plpy.execute(""" select count(*) from {0} AS FOO""".format(query))
+        __assert(rv2[0]["count"]==len(columns), "only integers and floats are supported")
+    except:
+        plpy.error("the chosen dimensions must exist as columns in table %s" %input_table);
+
+    if verbose:
+    	plpy.info("finished checking parameters...")
+
+    plpy.execute("DROP TABLE IF EXISTS {0}.dbscan".format(output_schema));
+    
+    create  = """
+    			CREATE TABLE {0}.dbscan
+            	(clusterID	INT,
+            	""".format(output_schema)
+    
+    final = "select "
+    
+    for col in columns:
+    	create += "%s float," %col
+    	final += "%s," %col
+    
+    create = create[:-1]
+    create += ") m4_ifdef(`__POSTGRESQL__', `', `DISTRIBUTED BY (clusterID)')"
+    
+    final = final[:-1]
+	final += "from %s" %input_table
+    
+    plpy.execute(create);
+    
+    plpy.execute("""SELECT * FROM {0}.run_dbscan({1},{3})""".format(madlib_schema, final, len(columns)))
