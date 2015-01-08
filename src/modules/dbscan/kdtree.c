@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <time.h>
 #include "kdtree.h"
+#include <postgres.h>
 
 #define NELEMS(x)  (sizeof(x) / sizeof(x[0]))
 #define MAX_DIM 20
@@ -12,16 +13,16 @@
 
 Point *__initPoint__(int k) {
 	Point *p;
-	p = (Point *) malloc( sizeof(Point) );
+	p = (Point *) palloc( sizeof(Point) );
 	p->k = k;
-	double *coordinates = (double *) malloc (sizeof(double)*k );
+	double *coordinates = (double *) palloc (sizeof(double)*k );
 	p->coordinates = coordinates;
 	return p;
 }
 
 kdnode *__initNode__ (Point *point) {
 	kdnode *node;
-	node = (kdnode *) malloc( sizeof(kdnode) );
+	node = (kdnode *) palloc( sizeof(kdnode) );
 	node->point = point;
 	node->visited = 0;
 	node->left=NULL;
@@ -31,7 +32,7 @@ kdnode *__initNode__ (Point *point) {
 
 kdtree *__initTree__(int k){
 	struct kdtree *tree;
-	tree = (kdtree *) malloc( sizeof(kdtree) );
+	tree = (kdtree *) palloc( sizeof(kdtree) );
 	tree->root = NULL;
 	tree->k = k;
 	return tree;
@@ -266,14 +267,14 @@ void print_range(range *r, int k, double *coords) {
 }
 
 void destroy_range(range *r) {
-	free(r->range);
-	free(r);
+	pfree(r->range);
+	pfree(r);
 }
 
 range *set_range(double *coords, double eps, int dimensions) {
 	range *r;
-	r = (range *) malloc( sizeof(range) );
-	double *x = (double *) malloc ( sizeof(double)*dimensions*2 );
+	r = (range *) palloc( sizeof(range) );
+	double *x = (double *) palloc ( sizeof(double)*dimensions*2 );
 	double d = eps;
 	int i;
 	int dim_count = 0;
@@ -289,9 +290,9 @@ range *set_range(double *coords, double eps, int dimensions) {
 }
 
 void destroy_point(Point *p) {
-	free(p->coordinates);
+	pfree(p->coordinates);
 	p->k = 0;
-	free(p);
+	pfree(p);
 }
 
 void destroy_nodes(kdnode *node) {
@@ -299,9 +300,9 @@ void destroy_nodes(kdnode *node) {
 	destroy_nodes(node->left);
 	destroy_nodes(node->right);
 	destroy_point(node->point);
-	free(node);
+	pfree(node);
 }
 void destroy_tree(kdtree *tree) {
 	destroy_nodes(tree->root);
-	free(tree);
+	pfree(tree);
 }

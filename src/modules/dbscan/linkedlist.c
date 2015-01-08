@@ -4,10 +4,11 @@
 #include <errno.h>
 #include <time.h>
 #include "linkedlist.h"
+#include <postgres.h>
 
 linkedlist *__initlinkedkist__() {
 	linkedlist *ll;
-	ll = (linkedlist *) malloc( sizeof(linkedlist) );
+	ll = (linkedlist *) palloc( sizeof(linkedlist) );
 	ll->length = 0;
 	ll->start = NULL;
 	return ll;
@@ -15,7 +16,7 @@ linkedlist *__initlinkedkist__() {
 
 void insert_linkedlist(linkedlist *ll, link *l, int k) {
 	if(!ll->start) {
-		ll->start = (link *) malloc( sizeof(link) );
+		ll->start = (link *) palloc( sizeof(link) );
 		ll->start = l;
 		ll->length = ll->length+1;
 		return;
@@ -49,8 +50,8 @@ void print_linkedlist(linkedlist *ll) {
 }
 
 void destroy_linkedlist(linkedlist *ll) {
-	if(!ll->start) {free(ll); return;}
+	if(!ll->start) {pfree(ll); return;}
 	destroy_link(ll->start);
-	free(ll);
+	pfree(ll);
 	return;
 }

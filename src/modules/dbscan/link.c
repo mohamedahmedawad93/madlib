@@ -1,11 +1,12 @@
 #include "link.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <postgres.h>
 
 link *__initlink__(int k) {
 	link *l;
-	l = (link *) malloc( sizeof(link) );
-	double *coordinates = (double *) malloc( sizeof(double)*k );
+	l = (link *) palloc( sizeof(link) );
+	double *coordinates = (double *) palloc( sizeof(double)*k );
 	l->cluster_id = 0;
 	l->coordinates = coordinates;
 	l->next = NULL;
@@ -14,7 +15,7 @@ link *__initlink__(int k) {
 
 void destroy_link(link *l) {
 	if(l->next) destroy_link(l->next);
-	free(l->coordinates);
-	free(l);
+	pfree(l->coordinates);
+	pfree(l);
 	return;
 }
