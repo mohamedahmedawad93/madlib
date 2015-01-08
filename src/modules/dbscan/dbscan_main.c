@@ -14,7 +14,6 @@ cc -shared -o postgresql_test.so postgresql_test.o dbscan.o kdtree.o linkedlist.
 #include "funcapi.h"
 #include "miscadmin.h" 
 #include "utils/builtins.h"
-#include "utils/numeric.h"
 #include "dbscan.h"
 #include "kdtree.h"
 #include "linkedlist.h"
@@ -27,7 +26,7 @@ PG_MODULE_MAGIC;
 PG_FUNCTION_INFO_V1(retcomposite);
 
 Datum
-retcomposite(PG_FUNCTION_ARGS)
+dbscan_main(PG_FUNCTION_ARGS)
 {
     elog(INFO, "hi");
     text                *sql = PG_GETARG_TEXT_PP(0);
